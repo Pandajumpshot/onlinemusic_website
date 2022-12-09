@@ -17,4 +17,10 @@ public interface MusicMapper {
      * @return
      */
     int insert(String title, String singer, String time, String url, int userid);
+
+
+    String[] isExist(String title);
+
+
 }
+

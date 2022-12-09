@@ -1,11 +1,13 @@
 package com.example.demo.controller;
 
 import com.example.demo.mapper.MusicMapper;
+import com.example.demo.model.Music;
 import com.example.demo.model.User;
 import com.example.demo.tools.Constant;
 import com.example.demo.tools.ResponseBodyMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.bind.BindException;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,16 +35,17 @@ public class MusicController {
     public ResponseBodyMessage<Boolean> insertMusic(@RequestParam String singer,
                                                     @RequestParam("filename") MultipartFile file,
                                                     HttpServletRequest request) {
-        // 1. 检查是否已经登录
+        // 1. 检查是否已经登录（上传过程）
         HttpSession httpSession = request.getSession(false);
         if (httpSession == null || httpSession.getAttribute(Constant.USERINFO_SESSION_KEY) == null) {
             System.out.println("没有登录！");
             return new ResponseBodyMessage<>(-1,"请登录后上传音乐",false);
         }
 
-        // 2. 上传到服务器
+
+        // 2. 上传到服务器  还需要检测是否重复上传
         String filenameAndType = file.getOriginalFilename(); // 能够获得xxx.mp3
-        String path = SAVE_PATH + "/" + filenameAndType;
+        String path = SAVE_PATH + "/" + filenameAndType; // 存储路径
 
         File dest = new File(path);
         if (!dest.exists()) {
@@ -61,6 +64,14 @@ public class MusicController {
         int dotIndex = filenameAndType.lastIndexOf(".");
         String title = filenameAndType.substring(0, dotIndex);
 
+        // 验证音乐是否重复上传
+        String[] Osinger = musicMapper.isExist(title);
+        for (int i = 0; i < Osinger.length; i++) {
+            if (singer.equals(Osinger[i])) {
+                return new ResponseBodyMessage<>(-1, "该歌曲已存在 请重新上传", false);
+            }
+        }
+
         User user = (User)httpSession.getAttribute(Constant.USERINFO_SESSION_KEY);
         int userid = user.getId();
 
@@ -70,14 +81,21 @@ public class MusicController {
         SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
         String time = sf.format(new Date());
 
-        int ret = 0;
-        ret =  musicMapper.insert(title,singer,time,url,userid);
-        if (ret == 1) {
-            // 这里应该跳转到音乐列表 页面
-            return new ResponseBodyMessage<>(1,"数据库上传成功",true);
-        } else {
+        try {
+            int ret = 0;
+            ret =  musicMapper.insert(title,singer,time,url,userid);
+            if (ret == 1) {
+                // 这里应该跳转到音乐列表 页面
+                return new ResponseBodyMessage<>(1,"数据库上传成功",true);
+            } else {
+                return new ResponseBodyMessage<>(-1,"数据库上传失败",false);
+            }
+        } catch (BindException e) {
+            // 处理 BindException异常 当上传数据库失败后 将已上传到服务器的文件删除
+            dest.delete();
             return new ResponseBodyMessage<>(-1,"数据库上传失败",false);
         }
+
 
     }
 }
