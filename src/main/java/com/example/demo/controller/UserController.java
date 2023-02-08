@@ -23,8 +23,8 @@ public class UserController {
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
 
-    @RequestMapping("/login1")
-    public ResponseBodyMessage<User> login1(@RequestParam String username, @RequestParam String password,
+    @RequestMapping("/login")
+    public ResponseBodyMessage<User> login(@RequestParam String username, @RequestParam String password,
                                            HttpServletRequest request) {
         User userLogin = new User();
         userLogin.setUsername(username);
@@ -43,25 +43,4 @@ public class UserController {
         }
     }
 
-
-    @RequestMapping("/login")
-    public ResponseBodyMessage<User> login(@RequestParam String username, @RequestParam String password,
-                                            HttpServletRequest request) {
-
-        User user = userMapper.selectByName(username);
-
-        if (user == null) {
-            System.out.println("登录失败");
-            return new ResponseBodyMessage<>(-1,"登录失败",user);
-        } else {
-            boolean flag = bCryptPasswordEncoder.matches(password, user.getPassword()); // 判断输入密码 和 用户表当中加密后的密码是否匹配
-            if (!flag) {
-                System.out.println("登录失败");
-                return new ResponseBodyMessage<>(-2,"用户名或密码输入错误",user);
-            }
-            request.getSession().setAttribute(Constant.USERINFO_SESSION_KEY,user);
-            System.out.println("登录成功");
-            return new ResponseBodyMessage<>(0,"登录成功",user);
-        }
-    }
 }

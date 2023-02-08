@@ -10,6 +10,4 @@ public interface UserMapper {
     User login(User userLogin);
 
 
-    User selectByName(String username);
-
 }
