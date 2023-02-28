@@ -9,5 +9,5 @@ public interface UserMapper {
     // 实现登录
     User login(User userLogin);
 
-
+    User selectByName(String userLogin);
 }
